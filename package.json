@@ -9,6 +9,14 @@
   "bin": {
     "mern-init": "./bin/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sujith-Srikar/mern-init-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Sujith-Srikar/mern-init-cli/issues"
+  },
+  "homepage": "https://github.com/Sujith-Srikar/mern-init-cli#readme",
   "author": "Sujith Srikar <kandregulasujith@gmail.com>",
   "license": "ISC",
   "dependencies": {
@@ -16,10 +24,10 @@
     "child-process": "^1.0.2",
     "fs": "^0.0.1-security",
     "inquirer": "^12.5.0",
+    "mern-init-cli": "^1.0.0",
     "path": "^0.12.7",
     "tailwindcss": "^4.0.15"
   },
-  "devDependencies": {},
   "keywords": [
     "mern",
     "setup",

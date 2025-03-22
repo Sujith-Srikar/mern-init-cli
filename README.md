@@ -1,143 +1,68 @@
-# Project Setup CLI
+# mern-init-cli
 
-## Introduction
-The **Project Setup CLI** is a command-line tool that automates the process of creating a full-stack web development project. It sets up a **backend with Express.js** and a **frontend with Vite (React)** while handling dependencies, configurations, and server execution.
+**mern-init-cli** is a CLI tool that helps you quickly set up a full-stack MERN project with both frontend and backend components. This tool streamlines the project initialization process by automatically generating boilerplate code, installing dependencies, and configuring essential files.
 
 ## Features
-- Initializes a **backend** with:
-  - `Express.js` & `dotenv`
-  - Folder structure: `models`, `controllers`, `routes`, `middlewares`, `utils`, `public`
-  - Auto-creation of `index.js`, `app.js`, `.env`, `.gitignore`, and `constant.js`
-  - Installs `nodemon` for automatic server restart
-  - Opens a **new terminal** and runs `nodemon index.js`
 
-- Initializes a **frontend** with:
-  - Vite + React (default: JavaScript)
-  - Installs dependencies and runs `npm run dev`
-
----
+- **Interactive Setup**: Answer a few simple prompts to generate your project.
+- **Frontend Setup**:
+  - Choose between React or Next.js.
+  - Select your language: JavaScript (default) or TypeScript.
+  - Option to integrate TailwindCSS.
+  - Automatically installs dependencies and starts the development server.
+- **Backend Setup**:
+  - Generates a basic Express server.
+  - Supports JavaScript or TypeScript.
+  - Creates essential files like `index.js`/`index.ts`, `.env`, and `.gitignore`.
+  - Installs dependencies such as Express, dotenv, and nodemon.
+- **Git Initialization**: Automatically initializes a git repository in your project folder.
+- **Simple & Elegant**: Focused on ease-of-use without unnecessary complexity.
 
 ## Installation
-To install the CLI globally from npm:
+
+You can install **mern-init-cli** globally using npm:
+
 ```sh
-npm install -g setup-cli
+npm install -g mern-init-cli
 ```
 
----
+Alternatively, you can run it directly with npx:
 
-## Usage
-To create a new project, run:
 ```sh
-setup-project <project-name>
+npx mern-init-cli
 ```
 
-For example:
-```sh
-setup-project my-app
-```
-This will create a `my-app/` folder and set up both backend and frontend inside it.
+The CLI will guide you through the following steps:
 
----
+### Project Setup
+- Project Name: Enter your desired project name (e.g., my-app).
 
-## Folder Structure
-```
-my-app/
-│── backend/
-│   ├── models/
-│   ├── controllers/
-│   ├── routes/
-│   ├── middlewares/
-│   ├── utils/
-│   ├── public/
-│   ├── index.js
-│   ├── app.js
-│   ├── constant.js
-│   ├── .env
-│   ├── .gitignore
-│   ├── package.json
-│   ├── node_modules/
-│
-│── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── index.html
-│   ├── package.json
-│   ├── node_modules/
-```
+#### Frontend Setup: 
+- Choose whether to set up the frontend.
 
----
+- Select your frontend framework (React or Next.js).
 
-## Steps Executed by the CLI
-### 1️⃣ **Backend Setup**
-- Creates a `backend/` directory.
-- Runs `npm init -y`.
-- Adds `{ "type": "module" }` to `package.json`.
-- Installs `express` and `dotenv`.
-- Installs `nodemon` as a dev dependency.
-- Creates backend folder structure.
-- Generates essential files (`index.js`, `app.js`, `.env`, `.gitignore`, `constant.js`).
-- Opens a new terminal and runs `npx nodemon index.js`.
+- Choose your preferred language (JavaScript or TypeScript).
 
-### 2️⃣ **Frontend Setup**
-- Creates a `frontend/` directory.
-- Asks the user to choose between JavaScript and TypeScript.
-- Runs `npm create vite@latest frontend -- --template react` (or `react-ts`).
-- Installs frontend dependencies (`npm install`).
-- Starts the frontend server (`npm run dev`).
+- Pick a CSS option (TailwindCSS or Vanilla CSS).
 
----
+#### Backend Setup:
 
-## Example Workflow
-```sh
-setup-project my-app
-```
-**Backend Terminal Output:**
-```
-🛠 Setting up backend...
-📦 Installing backend dependencies...
-🚀 Starting backend server...
-```
+- Choose whether to set up the backend.
 
-**Frontend Terminal Output:**
-```
-⚡ Setting up frontend with Vite...
-Choose language: (1) JavaScript (default) or (2) TypeScript:
-📦 Installing frontend dependencies...
-🚀 Starting frontend server...
-```
+- Select your backend language (JavaScript or TypeScript).
 
----
+The tool will then scaffold a basic Express server and set up environment configurations.
 
-## Dependencies Used
-- **Backend:**
-  - `express`
-  - `dotenv`
-  - `nodemon` (dev dependency)
+After the process completes, your project folder will have separate client and server directories with all necessary files. The CLI also automatically initializes a git repository.
 
-- **Frontend:**
-  - `vite`
-  - `react`
-  - `react-dom`
+#### Remember to replace the placeholders with your actual credentials in .env file in both server and client.
 
----
+### Feedback and Contributions
+#### We welcome your feedback and contributions!
+If you have any suggestions for improvements or encounter any issues, please submit an issue or pull request on our GitHub repository.
 
-## License
-MIT License
+### Links
+- NPM Package: https://www.npmjs.com/package/mern-init-cli
 
----
-
-## Future Improvements
-- Add support for **other frameworks** (e.g., Next.js, Vue.js).
-- Allow **customized folder structure**.
-- Provide **default backend API routes**.
-
----
-
-## Contributing
-Feel free to submit issues or contribute by creating a pull request! 🚀
-
----
-
-## Links
-- **NPM Package:** [https://www.npmjs.com/package/setup-cli](https://www.npmjs.com/package/setup-cli)
-- **GitHub Repository:** [[https://github.com/aaradhayasingh811/setup-cli.git](https://github.com/aaradhayasingh811/setup-cli.git)]
+- GitHub Repository: https://github.com/Sujith-Srikar/mern-init-cli
