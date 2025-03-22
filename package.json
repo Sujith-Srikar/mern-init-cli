@@ -1,0 +1,39 @@
+{
+  "name": "mern-init-cli",
+  "type": "module",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "mern-init": "./bin/index.js"
+  },
+  "author": "Sujith Srikar <kandregulasujith@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "@tailwindcss/vite": "^4.0.15",
+    "child-process": "^1.0.2",
+    "fs": "^0.0.1-security",
+    "inquirer": "^12.5.0",
+    "path": "^0.12.7",
+    "tailwindcss": "^4.0.15"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "mern",
+    "setup",
+    "project",
+    "biolerplate",
+    "scaffolding",
+    "react",
+    "nextjs",
+    "express",
+    "mongodb",
+    "tailwindcss",
+    "vite",
+    "firebase",
+    "supabase"
+  ],
+  "description": " A CLI tool for creating MERN projects with biolerplate code"
+}
