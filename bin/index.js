@@ -114,8 +114,7 @@ async function init() {
 }
 
 function generateReadme(projectPath, { frontend, backend }) {
-  const readmeContent = `
-# ${path.basename(projectPath)}
+  const readmeContent = `# ${path.basename(projectPath)}
 
 This project was generated using our custom project scaffolding tool. It includes:
 
@@ -136,8 +135,7 @@ ${
 ${
   frontend
     ? `1. Navigate to the client folder: \`cd ${path.join(".", "client")}\`
-2. Install dependencies: \`npm install\`
-3. Run the development server: \`npm run dev\`
+2. Run the development server: \`npm run dev\`
 `
     : "No frontend setup was performed."
 }
@@ -146,14 +144,13 @@ ${
 ${
   backend
     ? `1. Navigate to the server folder: \`cd ${path.join(".", "server")}\`
-2. Install dependencies: \`npm install\`
-3. Update the \`.env\` file with your configuration:
+2. Update the \`.env\` file with your configuration:
 
    - For MongoDB, set \`MONGODB_URI\` (e.g., \`mongodb+srv://<username>:<password>@cluster0.mongodb.net/<databaseName>?retryWrites=true&w=majority\`)
    - For FireBase, set \`FIREBASE_SERVICE_ACCOUNT\` and \`FIREBASE_DATABASE_URL\`
    - For SupaBase, set \`SUPABASE_URL\` and \`SUPABASE_KEY\`
 
-4. Run the development server: \`npm run dev\`
+3. Run the development server: \`npm run dev\`
 `
     : "No backend setup was performed."
 }
@@ -219,81 +216,95 @@ function setupReactRouting(isTS) {
   fs.writeFileSync(
     `src/main.${ext}`,
     `import React from "react";
-     import ReactDOM from "react-dom/client";
-     import { BrowserRouter } from "react-router-dom";
-     import App from "./App";
-     import "./index.css";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import "./index.css";
 
-     ReactDOM.createRoot(document.getElementById("root")).render(
-       <React.StrictMode>
-         <BrowserRouter>
-           <App />
-         </BrowserRouter>
-       </React.StrictMode>
-     );`
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);`
   );
 
   fs.writeFileSync(
     `src/App.${ext}`,
-    `import { Routes, Route, Link } from "react-router-dom";
+    `import { Routes, Route } from "react-router-dom";
+import "./App.css";
 
-    const Home = () => <h1>Home Page</h1>;
-    const About = () => <h1>About Page</h1>;
-
-    function App() {
-      return (
-        <div>
-          <nav>
-            <Link to="/">Home</Link> | <Link to="/about">About</Link>
-          </nav>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-          </Routes>
-        </div>
-      );
-    }
-
-    export default App;`
+const App = () => {
+  return (
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <div className="container">
+        <h1>Welcome to mern-init-cli Package</h1>
+        <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
+      </div>
+          }
+        />
+      </Routes>
   );
+};
+
+export default App;`
+  );
+  const cssFilePath = path.join(process.cwd(), "src", "App.css");
+  fs.writeFileSync(
+    cssFilePath,
+    `     
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+}
+
+h1 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 600px;
+  padding: 20px;
+  border-radius: 10px;
+}`
+  );
+
 }
 
 function setupTailwind(language) {
   console.log("\n📦 Installing TailwindCSS...");
+  execSync(`npm i tailwindcss @tailwindcss/vite`);
   const configFileName =
     language === "JavaScript" ? "vite.config.js" : "vite.config.ts";
 
   const configContent = `import { defineConfig } from 'vite'
-            import react from '@vitejs/plugin-react'
-            import tailwindcss from '@tailwindcss/vite';
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite';
   
-            export default defineConfig({
-              plugins: [react(), tailwindcss()],
-            });`;
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+});`;
 
   fs.writeFileSync(configFileName, configContent);
 
   const cssFilePath = path.join(process.cwd(), "src", "index.css");
   if (fs.existsSync(cssFilePath)) {
-    // Overwrite with Tailwind directives
     fs.writeFileSync(
       cssFilePath,
-      `:root {
-            line-height: 1.5;
-            font-weight: 400;
-            
-            font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-            color: rgba(255, 255, 255, 0.87);
-            color-scheme: light dark;
-            
-            background-color: #242424;
-            text-rendering: optimizeLegibility;
-            font-synthesis: none;
-            -moz-osx-font-smoothing: grayscale;
-            -webkit-font-smoothing: antialiased;
-          }
-  
-          @import "tailwindcss";`
+      `@import "tailwindcss";`
     );
   }
 }
@@ -304,7 +315,7 @@ function setupNextJsProject(language, cssChoice) {
   const cssFlag = cssChoice === "TailwindCSS" ? "--tailwind" : "";
 
   execSync(
-    `npx create-next-app@latest . ${tsFlag} --use-npm --eslint --src-dir --app ${cssFlag} --no-import-alias --yes`,
+    `npx create-next-app@latest . ${tsFlag} --use-npm --eslint --src-dir --app ${cssFlag} --no-import-alias --yens`,
     { stdio: "inherit" }
   );
 
@@ -319,28 +330,43 @@ function setupNextJsRouting(isTS) {
   const ext = isTS ? "tsx" : "js";
   const pagesDir = "src/app";
 
-  fs.mkdirSync(path.join(pagesDir, "about"), { recursive: true });
-  fs.mkdirSync(path.join(pagesDir, "contact"), { recursive: true });
-
   fs.writeFileSync(
     `${pagesDir}/page.${ext}`,
-    `export default function Home() {
-  return <h1>Welcome to Next.js!</h1>;
+    `"use client"
+
+export default function Home() {
+  return (
+    <div className="container">
+      <h1>Welcome to mern-init-cli Package</h1>
+      <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
+    </div>
+  );
 }`
   );
 
-  fs.writeFileSync(
-    `${pagesDir}/about/page.${ext}`,
-    `export default function About() {
-  return <h1>About Us</h1>;
-}`
-  );
+  fs.appendFileSync(
+    `${pagesDir}/globals.css`,
+    `body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+}
 
-  fs.writeFileSync(
-    `${pagesDir}/contact/page.${ext}`,
-    `export default function Contact() {
-  return <h1>Contact Us</h1>;
-}`
+h1 {
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+.container {
+  max-width: 600px;
+  padding: 20px;
+  border-radius: 10px;
+}
+    `
   );
 
   console.log("\n✅ Next.js routing setup complete!");
@@ -359,7 +385,6 @@ function serverSetUp(backendPath, serverlanguage, database) {
     const backendPackageJson = JSON.parse(
       fs.readFileSync(backendPackageJsonPath, "utf-8")
     );
-    backendPackageJson.type = "module";
     fs.writeFileSync(
       backendPackageJsonPath,
       JSON.stringify(backendPackageJson, null, 2)
@@ -369,7 +394,7 @@ function serverSetUp(backendPath, serverlanguage, database) {
     backendPackageJson.scripts = {
       ...backendPackageJson.scripts,
       dev: isTS
-        ? "nodemon --watch src --ext ts --exec ts-node src/index.ts"
+        ? "nodemon"
         : "nodemon src/index.js",
     };
 
@@ -410,6 +435,13 @@ function serverSetUp(backendPath, serverlanguage, database) {
 
 function installTSDependencies() {
   try {
+    const nodemonJSONcontent = `{
+  "watch": ["src"],
+  "ext": "ts",
+  "exec": "ts-node src/index.ts"
+}`;
+
+    fs.writeFileSync("nodemon.json", nodemonJSONcontent);
     execSync(
       "npm install --save-dev typescript ts-node @types/node @types/express @types/cors",
       { stdio: "inherit" }
@@ -426,7 +458,7 @@ function installTSDependencies() {
 function createTSConfig() {
   const tsConfigContent = {
     compilerOptions: {
-      target: "ESNext",
+      target: "ES6",
       module: "CommonJS",
       rootDir: "./src",
       outDir: "./dist",
@@ -461,12 +493,11 @@ function createSrcStructure() {
 }
 
 function createIndexFile(fileType) {
-  const indexContent = `
-import express from 'express';
+  const indexContent = `import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 dotenv.config();
-import connectDB from './config/db.config';
+import connectDB from './config/db.config.${fileType}';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -502,8 +533,7 @@ function setupDatabaseConfig(database, fileType, isTS) {
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
     const dbConfigContent = isTS
-      ? `
-import mongoose from 'mongoose';
+      ? `import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 
