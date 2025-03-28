@@ -25,8 +25,13 @@ You can install **mern-init-cli** globally using npm:
 ```sh
 npm install -g mern-init-cli
 ```
+or locally :
 
-Alternatively, you can run it directly with npx:
+```
+npm install mern-init-cli
+```
+
+After installing, you can run it directly with npx:
 
 ```sh
 npx mern-init-cli

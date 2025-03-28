@@ -23,7 +23,6 @@
     "child-process": "^1.0.2",
     "fs": "^0.0.1-security",
     "inquirer": "^12.5.0",
-    "mern-init-cli": "^1.0.0",
     "path": "^0.12.7"
   },
   "keywords": [

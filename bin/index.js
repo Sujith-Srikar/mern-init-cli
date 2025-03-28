@@ -415,7 +415,7 @@ function serverSetUp(backendPath, serverlanguage, database) {
 
     // Now we are in the "src" folder.
     const fileType = isTS ? "ts" : "js";
-    createIndexFile(fileType);
+    createIndexFile(fileType, database);
     createEnvFile(backendPath);
 
     setupDatabaseConfig(database, fileType, isTS);
@@ -423,7 +423,7 @@ function serverSetUp(backendPath, serverlanguage, database) {
     // Create .gitignore in the backend folder
     fs.writeFileSync(
       path.join(backendPath, ".gitignore"),
-      "node_modules\ndist\n.env\n"
+      "node_modules\ndist\n.env\nfirebaseServiceAccount.json"
     );
 
     console.log("\n✅ Backend setup complete!");
@@ -438,7 +438,7 @@ function installTSDependencies() {
     const nodemonJSONcontent = `{
   "watch": ["src"],
   "ext": "ts",
-  "exec": "ts-node src/index.ts"
+  "exec": "node --loader ts-node/esm src/index.ts"
 }`;
 
     fs.writeFileSync("nodemon.json", nodemonJSONcontent);
@@ -492,29 +492,47 @@ function createSrcStructure() {
   });
 }
 
-function createIndexFile(fileType) {
-  const indexContent = `import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
+function createIndexFile(fileType, database) {
+  try {
+    let importStatement = "";
+    let connectCall = "";
+
+    if (database === "MongoDB") {
+      importStatement = `const connectDB = require('./config/db.config.${fileType}');`;
+      connectCall = `  connectDB();`;
+    } else if (database === "FireBase") {
+      importStatement = `const db = require('./config/db.config.${fileType}');`;
+    } else if (database === "SupaBase") {
+      importStatement = `const supabase = require('./config/db.config.${fileType}');`;
+    } else {
+      throw new Error("Unsupported database type");
+    }
+
+    const indexContent = `const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
 dotenv.config();
-import connectDB from './config/db.config.${fileType}';
+${importStatement}
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 
 app.use(express.json());
 app.use(cors());
 
 app.listen(PORT, () => {
-  connectDB();
+${connectCall}
   console.log(\`🚀 Server started on port: \${PORT}\`);
 });
 `;
-  fs.writeFileSync(`index.${fileType}`, indexContent);
+
+    fs.writeFileSync(`index.${fileType}`, indexContent);
+  } catch (error) {
+    console.error("Error creating index file:", error);
+  }
 }
 
 function createEnvFile(backendPath) {
-  // Write .env in the backend folder (one level up from the current "src" directory)
   const envPath = path.join(backendPath, ".env");
   const envContent = `PORT=8000\n`;
   fs.writeFileSync(envPath, envContent, { flag: "w" });
@@ -533,8 +551,8 @@ function setupDatabaseConfig(database, fileType, isTS) {
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
     const dbConfigContent = isTS
-      ? `import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+      ? `const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 dotenv.config();
 
 const connectDB = async () => {
@@ -547,11 +565,11 @@ const connectDB = async () => {
   }
 };
 
-export default connectDB;
+module.exports = connectDB;
 `
       : `
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 dotenv.config();
 
 const connectDB = async () => {
@@ -564,40 +582,42 @@ const connectDB = async () => {
   }
 };
 
-export default connectDB;
+module.exports = connectDB;
 `;
     fs.writeFileSync(dbConfigPath, dbConfigContent);
   } else if (database === "FireBase") {
+    execSync("npm i firebase-admin", { stdio: "inherit" });
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
-    const firebaseContent = `
-import admin from 'firebase-admin';
-import dotenv from 'dotenv';
+    const firebaseContent = `const admin = require('firebase-admin');
+const dotenv = require('dotenv');
 dotenv.config();
-
+    
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-
+    
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: process.env.FIREBASE_DATABASE_URL,
 });
-
-console.log('✅ Firebase initialized');
-
-export default admin;
+    
+const db = admin.firestore();
+    
+if(!db) 
+  console.log('❌ Firebase initialization failed');
+else console.log('✅ Firebase initialized');
+    
+module.exports = db;
 `;
     fs.writeFileSync(dbConfigPath, firebaseContent);
     const envPath = path.join(process.cwd(), "..", ".env");
     fs.appendFileSync(
       envPath,
-      "FIREBASE_SERVICE_ACCOUNT=your-firebase-service-account-json\nFIREBASE_DATABASE_URL=your-firebase-database-url\n"
+      "FIREBASE_SERVICE_ACCOUNT=`your-firebase-service-account-json keep in quotes`\n"
     );
   } else if (database === "SupaBase") {
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
-    const supabaseContent = `
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
+    const supabaseContent = `const { createClient } = require('@supabase/supabase-js');
+const dotenv = require('dotenv');
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -606,7 +626,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log('✅ Supabase client created');
 
-export default supabase;
+module.exports = supabase;
 `;
     fs.writeFileSync(dbConfigPath, supabaseContent);
     const envPath = path.join(process.cwd(), "..", ".env");
