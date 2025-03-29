@@ -18,7 +18,7 @@ async function init() {
 
     const projectPath = path.join(process.cwd(), projectName);
     if (fs.existsSync(projectPath)) {
-      console.error("❌ Project already exists!");
+      console.error("Project already exists!");
       process.exit(1);
     }
 
@@ -34,7 +34,7 @@ async function init() {
     ]);
 
     if (frontendAccept) {
-      const { framework, language, cssChoice } = await inquirer.prompt([
+      const { framework, language, cssChoice, authAccept } = await inquirer.prompt([
         {
           type: "list",
           name: "framework",
@@ -56,12 +56,21 @@ async function init() {
           choices: ["TailwindCSS", "Vanilla CSS"],
           default: "TailwindCSS",
         },
+        {
+          type: "confirm",
+          name: "authAccept",
+          message: "Do you want to use Clerk for authentication in your project? (Requires a Clerk account)",
+          default: false,
+        }
       ]);
 
       const frontendPath = path.join(projectPath, "client");
       fs.mkdirSync(frontendPath, { recursive: true });
-      clientSetUp(framework, language, cssChoice, frontendPath);
+      clientSetUp(framework, language, cssChoice, frontendPath, authAccept);
     }
+
+    if(!frontendAccept)
+      console.log("✅Skipping frontend Setup");
 
     const { backendAccept } = await inquirer.prompt([
       {
@@ -73,7 +82,7 @@ async function init() {
     ]);
 
     if (!backendAccept) {
-      console.log("✅ Frontend setup complete! Skipping backend.");
+      console.log("✅Skipping backend  Setup");
       process.exit(0);
     }
 
@@ -92,7 +101,7 @@ async function init() {
         type: "list",
         name: "database",
         message: "Choose your database:",
-        choices: ["MongoDB", "FireBase", "SupaBase"],
+        choices: ["MongoDB", "FireBase", "SupaBase", "None"],
         default: "MongoDB",
       },
     ]);
@@ -135,7 +144,8 @@ ${
 ${
   frontend
     ? `1. Navigate to the client folder: \`cd ${path.join(".", "client")}\`
-2. Run the development server: \`npm run dev\`
+    2. Update the \`.env\` file with your configuration:
+3. Run the development server: \`npm run dev\`
 `
     : "No frontend setup was performed."
 }
@@ -163,13 +173,13 @@ ${
 
   try {
     fs.writeFileSync(path.join(projectPath, "README.md"), readmeContent);
-    console.log("\n✅ README.md created in the project root.");
+    console.log("\nREADME.md created in the project root.");
   } catch (err) {
-    console.error("❌ Failed to create README.md:", err.message);
+    console.error("Failed to create README.md:", err.message);
   }
 }
 
-function clientSetUp(framework, language, cssChoice, frontendPath) {
+function clientSetUp(framework, language, cssChoice, frontendPath, authAccept) {
   try {
     console.log("\n⚡ Setting up frontend...");
     process.chdir(frontendPath);
@@ -178,6 +188,12 @@ function clientSetUp(framework, language, cssChoice, frontendPath) {
       setupReactProject(language, cssChoice);
     } else if (framework === "Next.js") {
       setupNextJsProject(language, cssChoice);
+    }
+
+    if(authAccept){
+      if(framework === "React")
+        setupReactClerk(language);
+      else setupNextClerk(language);
     }
 
     fs.appendFileSync(".gitignore", ".env");
@@ -221,7 +237,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import "./index.css";
 
-ReactDOM.createRoot(document.getElementById("root")).render(
+ReactDOM.createRoot(document.getElementById("root")${isTS ? "!" : ""}).render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
@@ -235,18 +251,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     `import { Routes, Route } from "react-router-dom";
 import "./App.css";
 
+const Home = () => {
+  return (
+    <div className="container">
+      <h1>Welcome to mern-init-cli Package</h1>
+      <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
+    </div>
+  );
+}
+
 const App = () => {
   return (
       <Routes>
-        <Route
-          path="/"
-          element={
-            <div className="container">
-        <h1>Welcome to mern-init-cli Package</h1>
-        <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
-      </div>
-          }
-        />
+        <Route path="/" element={<Home />} />
       </Routes>
   );
 };
@@ -256,8 +273,7 @@ export default App;`
   const cssFilePath = path.join(process.cwd(), "src", "App.css");
   fs.writeFileSync(
     cssFilePath,
-    `     
-body {
+    `body {
   margin: 0;
   padding: 0;
   background-color: #121212;
@@ -282,6 +298,101 @@ h1 {
 }`
   );
 
+}
+
+function setupReactClerk(language) {
+  const isTS = language === "TypeScript";
+
+  console.log("\n📦 Installing Clerk...");
+
+  execSync(`npm install @clerk/clerk-react}`, {stdio: "inherit"});
+  fs.appendFileSync(".env", `VITE_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n`);
+
+  fs.writeFileSync(
+    `src/main.${isTS ? "tsx" : "jsx"}`,
+    `import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App";
+import "./index.css";
+import { ClerkProvider } from "@clerk/clerk-react";
+
+const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!PUBLISHABLE_KEY) {
+  throw new Error("Add your Clerk Publishable Key to the .env file");
+}
+
+ReactDOM.createRoot(document.getElementById("root")${isTS ? "!" : ""}).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <ClerkProvider publishableKey={PUBLISHABLE_KEY} afterSignOutUrl="/">
+        <App />
+      </ClerkProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);`);
+
+  fs.writeFileSync(
+    `src/App.${isTS ? "tsx" : "jsx"}`,
+    `
+    import { Routes, Route } from "react-router-dom";
+import "./App.css";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/clerk-react";
+
+const Home = () => {
+  return (
+    <div className="container">
+      <header>
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+        <SignedIn>
+          <UserButton  />
+        </SignedIn>
+      </header>
+      <h1>Welcome to mern-init-cli Package</h1>
+      <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
+    </div>
+  );
+}
+
+const App = () => {
+  return (
+      <Routes>
+        <Route
+          path="/"
+          element={<Home />}
+        />
+      </Routes>
+  );
+};
+
+export default App;`
+  );
+
+  const cssFilePath = path.join(process.cwd(), "src", "App.css");
+  fs.appendFileSync(
+    cssFilePath,
+    `header {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background-color: white;
+  color: black;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}`
+  );
 }
 
 function setupTailwind(language) {
@@ -372,6 +483,134 @@ h1 {
   console.log("\n✅ Next.js routing setup complete!");
 }
 
+function setupNextClerk(language){
+  try {
+    
+    const isTS = language === "TypeScript";
+    execSync(`npm install @clerk/nextjs`, { stdio: "inherit" });
+    fs.appendFileSync(
+      ".env",
+      "\nNEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n"
+    );
+    const srcDir = path.join(process.cwd(), "src");
+    if (!fs.existsSync(srcDir)) {
+      fs.mkdirSync(srcDir);
+    }
+    const middlewareExt = isTS ? "ts" : "js";
+    const middlewarePath = path.join(srcDir, `middleware.${middlewareExt}`);
+    const middlewareContent = `import { clerkMiddleware } from '@clerk/nextjs/server';
+
+export default clerkMiddleware();
+
+export const config = {
+  matcher: [
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
+  ],
+};
+`;
+    fs.writeFileSync(middlewarePath, middlewareContent);
+    console.log(`Created: ${middlewarePath}`);
+    const appDir = path.join(srcDir, "app");
+    if (!fs.existsSync(appDir)) {
+      fs.mkdirSync(appDir);
+    }
+    const compExt = isTS ? "tsx" : "jsx";
+    const layoutPath = path.join(appDir, `layout.${compExt}`);
+    const layoutContent = `import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import {
+  ClerkProvider,
+} from "@clerk/nextjs";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Create Next App",
+  description: "Generated by create next app",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className={\`${geistSans.variable} ${geistMono.variable} antialiased\`}
+        >
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
+  );
+}
+`
+    fs.writeFileSync(layoutPath, layoutContent);
+    console.log(`Created: ${layoutPath}`);
+
+    // Create page file in src/app as the Home page
+    const pagePath = path.join(appDir, `page.${compExt}`);
+    const pageContent = `"use client";
+
+export default function Home() {
+  return (
+    <div className="container">
+      <h1>Welcome to mern-init-cli Package</h1>
+      <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
+    </div>
+  );
+}
+`;
+    fs.writeFileSync(pagePath, pageContent);
+    console.log(`Created: ${pagePath}`);
+
+    // Append header styles to globals.css in src directory
+    const globalsCssPath = path.join(srcDir, "globals.css");
+    const headerStyles = `
+/* Header styles for Clerk buttons */
+.clerk-header {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background-color: white;
+  color: black;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+}
+`;
+    if (fs.existsSync(globalsCssPath)) {
+      fs.appendFileSync(globalsCssPath, headerStyles);
+      console.log(`Appended styles to: ${globalsCssPath}`);
+    } else {
+      fs.writeFileSync(globalsCssPath, headerStyles);
+      console.log(`Created: ${globalsCssPath}`);
+    }
+
+    console.log("\n✅ Next.js Clerk setup complete!");
+  } catch (error) {
+    console.error("❌ Error setting up Next.js Clerk:", error.message);
+    process.exit(1);
+  }
+}
+
 function serverSetUp(backendPath, serverlanguage, database) {
   try {
     console.log("\n⚡ Setting up backend...");
@@ -385,6 +624,7 @@ function serverSetUp(backendPath, serverlanguage, database) {
     const backendPackageJson = JSON.parse(
       fs.readFileSync(backendPackageJsonPath, "utf-8")
     );
+    backendPackageJson.type = "module";
     fs.writeFileSync(
       backendPackageJsonPath,
       JSON.stringify(backendPackageJson, null, 2)
@@ -417,8 +657,8 @@ function serverSetUp(backendPath, serverlanguage, database) {
     const fileType = isTS ? "ts" : "js";
     createIndexFile(fileType, database);
     createEnvFile(backendPath);
-
-    setupDatabaseConfig(database, fileType, isTS);
+    if(database !== "None")
+      setupDatabaseConfig(database, fileType, isTS);
 
     // Create .gitignore in the backend folder
     fs.writeFileSync(
@@ -458,18 +698,27 @@ function installTSDependencies() {
 function createTSConfig() {
   const tsConfigContent = {
     compilerOptions: {
-      target: "ES6",
-      module: "CommonJS",
-      rootDir: "./src",
-      outDir: "./dist",
+      target: "ES2022",
+      module: "ESNext",
+      moduleResolution: "Node",
       strict: true,
       esModuleInterop: true,
+      forceConsistentCasingInFileNames: true,
       skipLibCheck: true,
+      isolatedModules: true,
+      resolveJsonModule: true,
+      outDir: "./dist",
+      rootDir: "./src",
+      noEmit: true,
+      types: ["node"],
+      allowImportingTsExtensions: true,
+      verbatimModuleSyntax: true,
+      incremental: true,
     },
-    include: ["src/**/*"],
-    exclude: ["node_modules"],
+    include: ["src/**/*.ts"],
+    exclude: ["node_modules", "dist"],
   };
-  fs.writeFileSync("ts.config.json", JSON.stringify(tsConfigContent, null, 2));
+  fs.writeFileSync("tsconfig.json", JSON.stringify(tsConfigContent, null, 2));
 }
 
 function createSrcStructure() {
@@ -498,19 +747,19 @@ function createIndexFile(fileType, database) {
     let connectCall = "";
 
     if (database === "MongoDB") {
-      importStatement = `const connectDB = require('./config/db.config.${fileType}');`;
+      importStatement = `import connectDB from './config/db.config.${fileType}';`;
       connectCall = `  connectDB();`;
     } else if (database === "FireBase") {
-      importStatement = `const db = require('./config/db.config.${fileType}');`;
+      importStatement = `import db from './config/db.config.${fileType}';`;
     } else if (database === "SupaBase") {
-      importStatement = `const supabase = require('./config/db.config.${fileType}');`;
+      importStatement = `import supabase from './config/db.config.${fileType}';`;
     } else {
       throw new Error("Unsupported database type");
     }
 
-    const indexContent = `const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+    const indexContent = `import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
 dotenv.config();
 ${importStatement}
 
@@ -551,8 +800,8 @@ function setupDatabaseConfig(database, fileType, isTS) {
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
     const dbConfigContent = isTS
-      ? `const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+      ? `import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 dotenv.config();
 
 const connectDB = async () => {
@@ -565,11 +814,11 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB;
+export default connectDB;
 `
       : `
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
 dotenv.config();
 
 const connectDB = async () => {
@@ -582,30 +831,33 @@ const connectDB = async () => {
   }
 };
 
-module.exports = connectDB;
+export default connectDB;
 `;
     fs.writeFileSync(dbConfigPath, dbConfigContent);
   } else if (database === "FireBase") {
     execSync("npm i firebase-admin", { stdio: "inherit" });
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
-    const firebaseContent = `const admin = require('firebase-admin');
-const dotenv = require('dotenv');
+    const firebaseContent = `import * as admin from 'firebase-admin';
+import dotenv from 'dotenv';
+
 dotenv.config();
-    
+
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
-    
+
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-    
+
 const db = admin.firestore();
-    
-if(!db) 
+
+if (!db) {
   console.log('❌ Firebase initialization failed');
-else console.log('✅ Firebase initialized');
-    
-module.exports = db;
+} else {
+  console.log('✅ Firebase initialized');
+}
+
+export default db;
 `;
     fs.writeFileSync(dbConfigPath, firebaseContent);
     const envPath = path.join(process.cwd(), "..", ".env");
@@ -616,8 +868,9 @@ module.exports = db;
   } else if (database === "SupaBase") {
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
-    const supabaseContent = `const { createClient } = require('@supabase/supabase-js');
-const dotenv = require('dotenv');
+    const supabaseContent = `import { createClient } from '@supabase/supabase-js';
+import dotenv from 'dotenv';
+
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -626,7 +879,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log('✅ Supabase client created');
 
-module.exports = supabase;
+export default supabase;
 `;
     fs.writeFileSync(dbConfigPath, supabaseContent);
     const envPath = path.join(process.cwd(), "..", ".env");

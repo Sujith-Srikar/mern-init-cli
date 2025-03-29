@@ -9,6 +9,7 @@
   - Choose between React or Next.js.
   - Select your language: JavaScript (default) or TypeScript.
   - Option to integrate TailwindCSS.
+  - Setup Clerk Authentication
   - Automatically installs dependencies and starts the development server.
 - **Backend Setup**:
   - Generates a basic Express server.
@@ -50,6 +51,8 @@ The CLI will guide you through the following steps:
 - Choose your preferred language (JavaScript or TypeScript).
 
 - Pick a CSS option (TailwindCSS or Vanilla CSS).
+
+- Choose whether you want Clerk Authentication or not
 
 #### Backend Setup:
 
