@@ -12,14 +12,22 @@ async function init() {
         type: "input",
         name: "projectName",
         message: "Enter your project name:",
-        default: process.argv[2] || "my-project",
+        default:
+          process.argv[2] ||
+          "my-project (enter . if you want to setup in current directory)",
       },
     ]);
 
-    const projectPath = path.join(process.cwd(), projectName);
-    if (fs.existsSync(projectPath)) {
-      console.error("Project already exists!");
-      process.exit(1);
+    let projectPath;
+    if (projectName === ".") {
+      projectPath = process.cwd();
+    } else {
+      projectPath = path.join(process.cwd(), projectName);
+      if (fs.existsSync(projectPath)) {
+        console.error("Project already exists!");
+        process.exit(1);
+      }
+      fs.mkdirSync(projectPath, { recursive: true });
     }
 
     fs.mkdirSync(projectPath, { recursive: true });
@@ -83,9 +91,8 @@ async function init() {
 
     if (!backendAccept) {
       console.log("✅Skipping backend  Setup");
-      process.exit(0);
     }
-
+    else{
     const { serverlanguage } = await inquirer.prompt([
       {
         type: "list",
@@ -109,7 +116,7 @@ async function init() {
     const backendPath = path.join(projectPath, "server");
     fs.mkdirSync(backendPath, { recursive: true });
     serverSetUp(backendPath, serverlanguage, database);
-
+  }
     generateReadme(projectPath, {
       frontend: frontendAccept,
       backend: backendAccept,
@@ -195,8 +202,8 @@ function clientSetUp(framework, language, cssChoice, frontendPath, authAccept) {
         setupReactClerk(language);
       else setupNextClerk(language);
     }
-
-    fs.appendFileSync(".gitignore", ".env");
+    if(framework === "React")
+      fs.appendFileSync(".gitignore", ".env");
     console.log("\n✅ Frontend setup complete!");
   } catch (error) {
     console.error("❌ Error setting up frontend:", error.message);
@@ -220,6 +227,8 @@ function setupReactProject(language, cssChoice) {
   if (cssChoice === "TailwindCSS") {
     setupTailwind(language);
   }
+
+  fs.unlinkSync("README.md");
 
   execSync(`npm install`, { stdio: "inherit" });
 }
@@ -295,7 +304,8 @@ h1 {
   max-width: 600px;
   padding: 20px;
   border-radius: 10px;
-}`
+}
+`
   );
 
 }
@@ -305,7 +315,7 @@ function setupReactClerk(language) {
 
   console.log("\n📦 Installing Clerk...");
 
-  execSync(`npm install @clerk/clerk-react}`, {stdio: "inherit"});
+  execSync(`npm install @clerk/clerk-react`, {stdio: "inherit"});
   fs.appendFileSync(".env", `VITE_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n`);
 
   fs.writeFileSync(
@@ -335,8 +345,7 @@ ReactDOM.createRoot(document.getElementById("root")${isTS ? "!" : ""}).render(
 
   fs.writeFileSync(
     `src/App.${isTS ? "tsx" : "jsx"}`,
-    `
-    import { Routes, Route } from "react-router-dom";
+    `import { Routes, Route } from "react-router-dom";
 import "./App.css";
 import {
   SignedIn,
@@ -379,7 +388,8 @@ export default App;`
   const cssFilePath = path.join(process.cwd(), "src", "App.css");
   fs.appendFileSync(
     cssFilePath,
-    `header {
+    `
+    header {
   position: absolute;
   top: 30px;
   right: 30px;
@@ -426,12 +436,12 @@ function setupNextJsProject(language, cssChoice) {
   const cssFlag = cssChoice === "TailwindCSS" ? "--tailwind" : "";
 
   execSync(
-    `npx create-next-app@latest . ${tsFlag} --use-npm --eslint --src-dir --app ${cssFlag} --no-import-alias --yens`,
+    `npx create-next-app@latest . ${tsFlag} --use-npm --eslint --src-dir --app ${cssFlag} --no-import-alias --yens --turbopack`,
     { stdio: "inherit" }
   );
 
   setupNextJsRouting(isTS);
-
+  fs.unlinkSync("README.md");
   execSync(`npm install`, { stdio: "inherit" });
 }
 
@@ -484,13 +494,12 @@ h1 {
 }
 
 function setupNextClerk(language){
-  try {
-    
+  try { 
     const isTS = language === "TypeScript";
     execSync(`npm install @clerk/nextjs`, { stdio: "inherit" });
     fs.appendFileSync(
       ".env",
-      "\nNEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n"
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\nCLERK_SECRET_KEY=YOUR_SECRET_KEY\n"
     );
     const srcDir = path.join(process.cwd(), "src");
     if (!fs.existsSync(srcDir)) {
@@ -510,19 +519,16 @@ export const config = {
 };
 `;
     fs.writeFileSync(middlewarePath, middlewareContent);
-    console.log(`Created: ${middlewarePath}`);
     const appDir = path.join(srcDir, "app");
     if (!fs.existsSync(appDir)) {
       fs.mkdirSync(appDir);
     }
-    const compExt = isTS ? "tsx" : "jsx";
+    const compExt = isTS ? "tsx" : "js";
     const layoutPath = path.join(appDir, `layout.${compExt}`);
     const layoutContent = `import type { Metadata } from "next";
+import {ClerkProvider} from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import {
-  ClerkProvider,
-} from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -535,7 +541,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Create Next App",
+  title: "Clerk Next.js Quickstart",
   description: "Generated by create next app",
 };
 
@@ -548,7 +554,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={\`${geistSans.variable} ${geistMono.variable} antialiased\`}
+           className={\`\$\{geistSans.variable\} \$\{geistMono.variable\} antialiased\`}
         >
           {children}
         </body>
@@ -556,17 +562,23 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
-`
+`;
     fs.writeFileSync(layoutPath, layoutContent);
-    console.log(`Created: ${layoutPath}`);
 
-    // Create page file in src/app as the Home page
     const pagePath = path.join(appDir, `page.${compExt}`);
-    const pageContent = `"use client";
-
+    const pageContent = `"use client"
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 export default function Home() {
   return (
     <div className="container">
+      <header>
+        <SignedOut>
+          <SignInButton />
+        </SignedOut>
+        <SignedIn>
+          <UserButton />
+        </SignedIn>
+      </header>
       <h1>Welcome to mern-init-cli Package</h1>
       <p>A simple CLI tool to set up a MERN stack project effortlessly.</p>
     </div>
@@ -574,13 +586,10 @@ export default function Home() {
 }
 `;
     fs.writeFileSync(pagePath, pageContent);
-    console.log(`Created: ${pagePath}`);
 
-    // Append header styles to globals.css in src directory
-    const globalsCssPath = path.join(srcDir, "globals.css");
+    const globalsCssPath = path.join(appDir, "globals.css");
     const headerStyles = `
-/* Header styles for Clerk buttons */
-.clerk-header {
+header {
   position: absolute;
   top: 30px;
   right: 30px;
@@ -596,13 +605,7 @@ export default function Home() {
   gap: 8px;
 }
 `;
-    if (fs.existsSync(globalsCssPath)) {
-      fs.appendFileSync(globalsCssPath, headerStyles);
-      console.log(`Appended styles to: ${globalsCssPath}`);
-    } else {
-      fs.writeFileSync(globalsCssPath, headerStyles);
-      console.log(`Created: ${globalsCssPath}`);
-    }
+    fs.appendFileSync(globalsCssPath, headerStyles);
 
     console.log("\n✅ Next.js Clerk setup complete!");
   } catch (error) {
@@ -611,15 +614,14 @@ export default function Home() {
   }
 }
 
+// backend
 function serverSetUp(backendPath, serverlanguage, database) {
   try {
     console.log("\n⚡ Setting up backend...");
     process.chdir(backendPath);
 
-    // Initialize npm package
     execSync("npm init -y", { stdio: "inherit" });
 
-    // Modify package.json to use ES modules
     const backendPackageJsonPath = path.join(process.cwd(), "package.json");
     const backendPackageJson = JSON.parse(
       fs.readFileSync(backendPackageJsonPath, "utf-8")
@@ -643,7 +645,6 @@ function serverSetUp(backendPath, serverlanguage, database) {
       JSON.stringify(backendPackageJson, null, 2)
     );
 
-    // Install core dependencies
     execSync("npm i express dotenv cors nodemon", { stdio: "inherit" });
 
     if (isTS) {
@@ -653,14 +654,12 @@ function serverSetUp(backendPath, serverlanguage, database) {
 
     createSrcStructure();
 
-    // Now we are in the "src" folder.
     const fileType = isTS ? "ts" : "js";
     createIndexFile(fileType, database);
     createEnvFile(backendPath);
     if(database !== "None")
       setupDatabaseConfig(database, fileType, isTS);
 
-    // Create .gitignore in the backend folder
     fs.writeFileSync(
       path.join(backendPath, ".gitignore"),
       "node_modules\ndist\n.env\nfirebaseServiceAccount.json"
@@ -722,12 +721,10 @@ function createTSConfig() {
 }
 
 function createSrcStructure() {
-  // Create and move into the "src" folder
   const srcPath = path.join(process.cwd(), "src");
   if (!fs.existsSync(srcPath)) fs.mkdirSync(srcPath);
   process.chdir(srcPath);
 
-  // Create subfolders under "src"
   const folders = [
     "models",
     "controllers",
@@ -790,13 +787,11 @@ function createEnvFile(backendPath) {
 function setupDatabaseConfig(database, fileType, isTS) {
   if (database === "MongoDB") {
     execSync("npm i mongoose", { stdio: "inherit" });
-    // Append MongoDB URI to the .env file in backend folder
     const envPath = path.join(process.cwd(), "..", ".env");
     fs.appendFileSync(
       envPath,
       `MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/<databaseName>?retryWrites=true&w=majority\n`
     );
-    // Write DB config file inside the "config" folder (current dir is "src")
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
     const dbConfigContent = isTS
@@ -816,8 +811,7 @@ const connectDB = async () => {
 
 export default connectDB;
 `
-      : `
-import mongoose from 'mongoose';
+      : `import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -838,7 +832,7 @@ export default connectDB;
     execSync("npm i firebase-admin", { stdio: "inherit" });
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
-    const firebaseContent = `import * as admin from 'firebase-admin';
+    const firebaseContent = `import admin from "firebase-admin";
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -866,6 +860,7 @@ export default db;
       "FIREBASE_SERVICE_ACCOUNT=`your-firebase-service-account-json keep in quotes`\n"
     );
   } else if (database === "SupaBase") {
+    execSync("npm i @supabase/supabase-js", { stdio: "inherit" });
     const dbConfigFile = `db.config.${fileType}`;
     const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
     const supabaseContent = `import { createClient } from '@supabase/supabase-js';
@@ -873,8 +868,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.SUPABASE_URL!;
+const supabaseKey = process.env.SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 console.log('✅ Supabase client created');
@@ -885,7 +880,7 @@ export default supabase;
     const envPath = path.join(process.cwd(), "..", ".env");
     fs.appendFileSync(
       envPath,
-      "SUPABASE_URL=https://your-supabase-url\nSUPABASE_KEY=your-supabase-key\n"
+      "SUPABASE_URL=https://your-supabase-url\nSUPABASE_ANON_KEY=your-supabase-key\n"
     );
   }
 }
