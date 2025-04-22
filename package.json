@@ -23,7 +23,8 @@
     "child-process": "^1.0.2",
     "fs": "^0.0.1-security",
     "inquirer": "^12.5.0",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "react-router-dom": "^7.5.0"
   },
   "keywords": [
     "mern",
@@ -40,5 +41,15 @@
     "firebase",
     "supabase"
   ],
-  "description": " A CLI tool for creating MERN projects with biolerplate code"
+  "description": " A CLI tool for creating MERN projects with biolerplate code",
+  "devDependencies": {
+    "@babel/cli": "^7.27.0",
+    "@babel/core": "^7.26.10",
+    "@babel/generator": "^7.27.0",
+    "@babel/parser": "^7.27.0",
+    "@babel/plugin-transform-react-jsx": "^7.25.9",
+    "@babel/preset-env": "^7.26.9",
+    "@babel/template": "^7.27.0",
+    "@babel/types": "^7.27.0"
+  }
 }
