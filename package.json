@@ -4,7 +4,8 @@
   "version": "1.0.3",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "tsx bin/temp.ts"
   },
   "bin": {
     "mern-init": "./bin/index.js"
@@ -25,7 +26,9 @@
     "init-mern": "^1.5.1",
     "inquirer": "^12.5.0",
     "path": "^0.12.7",
-    "react-router-dom": "^7.5.0"
+    "react-router-dom": "^7.5.0",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3"
   },
   "keywords": [
     "mern",

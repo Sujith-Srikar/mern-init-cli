@@ -1,4 +1,4 @@
-const logger = {
+export const logger = {
   info: (message: string): void =>
     console.log(`\x1b[36mINFO:\x1b[0m ${message}`),
   success: (message: string): void =>
@@ -11,5 +11,3 @@ const logger = {
 
 // here \x1b is the escape character for color codes
 // \x1b[36m is the code for cyan text
-
-export default logger;

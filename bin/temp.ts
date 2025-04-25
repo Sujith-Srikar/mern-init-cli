@@ -1,154 +1,11 @@
 // #!/usr/bin/env node
 
-// import templateModule from "@babel/template";
-// import generateModule from "@babel/generator";
-// import * as t from "@babel/types";
-// import fs from "fs";
-// import path from "path";
-// import inquirer from "inquirer";
-// import { execSync, spawn } from "child_process";
-
-// const CONFIG = {
-//   templates: {
-//     reactRouterJs: {
-//       plugins: ["jsx"],
-//       code: `
-// import React from "react";
-// import ReactDOM from "react-dom/client";
-// import { BrowserRouter } from "react-router-dom";
-// import App from "./App";
-// import "./index.css";
-
-// ReactDOM.createRoot(document.getElementById("root")).render(
-//   <React.StrictMode>
-//     <BrowserRouter>
-//       <App />
-//     </BrowserRouter>
-//   </React.StrictMode>
-// );`,
-//     },
-//     reactRouterTs: {
-//       plugins: ["jsx", "typescript"],
-//       code: `
-// import React from "react";
-// import ReactDOM from "react-dom/client";
-// import { BrowserRouter } from "react-router-dom";
-// import App from "./App";
-// import "./index.css";
-
-// ReactDOM.createRoot(document.getElementById("root")!).render(
-//   <React.StrictMode>
-//     <BrowserRouter>
-//       <App />
-//     </BrowserRouter>
-//   </React.StrictMode>
-// );`,
-//     },
-//   },
-//   commands: {
-//     createReact: "npm create vite@latest . -- --template react",
-//     installRouter: "npm i react-router-dom",
-//   },
-// };
-
-// const logger = {
-//   info: (message) => console.log(`\x1b[36mINFO:\x1b[0m ${message}`),
-//   success: (message) => console.log(`\x1b[32mSUCCESS:\x1b[0m ${message}`),
-//   error: (message) => console.error(`\x1b[31mERROR:\x1b[0m ${message}`),
-//   warn: (message) => console.warn(`\x1b[33mWARNING:\x1b[0m ${message}`),
-// };
-
-// function setUpReactProject(language) {
-//   try {
-//     const ast = new ASTGenerator();
-//     const isTs = language === "typescript";
-//     const template = isTs ? "react-ts" : "react";
-//     fs.mkdirSync("client", { recursive: true });
-//     process.chdir("client");
-//     logger.info(`Setting up React project in ${process.cwd()}`);
-
-//     logger.info("Creating Vite project...");
-//     execSync(`npm create vite@latest . -- --template ${template}`, {
-//       stdio: "inherit",
-//     });
-//     logger.success(`Vite ${template} project created successfully`);
-
-//     logger.info("Installing React Router...");
-//     execSync("npm i react-router-dom", { stdio: "inherit" });
-//     logger.success("React Router installed successfully");
-
-//     // Use the appropriate template based on language
-//     const templateName = isTs ? "reactRouterTs" : "reactRouterJs";
-//     const routerCode = ast.generateFromTemplate(templateName);
-//     const mainFile = isTs ? "main.tsx" : "main.jsx";
-//     const mainFilePath = path.join(process.cwd(), "src", mainFile);
-
-//     if (fs.existsSync(path.join(process.cwd(), "src"))) {
-//       fs.writeFileSync(mainFilePath, routerCode);
-//       logger.success(`React Router code written to ${mainFilePath}`);
-//       logger.info(`TypeScript mode: ${isTs ? "enabled" : "disabled"}`);
-//     } else {
-//       throw new Error(
-//         "src directory not found. Vite project setup may have failed."
-//       );
-//     }
-//   } catch (err) {
-//     logger.error(`Error setting up React project: ${err.message}`);
-//   }
-// }
-
-// class ASTGenerator {
-//   constructor() {
-//     this.template = templateModule.default;
-//     this.generate = generateModule.default;
-//     this.cachedASTs = new Map();
-//   }
-
-//   /**
-//    * Generate code from an AST template
-//    * @param {string} templateName - Name of the template in CONFIG.templates
-//    * @returns {string} Generated code
-//    */
-//   generateFromTemplate(templateName) {
-//     try {
-//       if (this.cachedASTs.has(templateName)) {
-//         return this.generate(this.cachedASTs.get(templateName)).code;
-//       }
-
-//       const templateConfig = CONFIG.templates[templateName];
-//       if (!templateConfig) {
-//         throw new Error(
-//           `Template "${templateName}" not found in configuration`
-//         );
-//       }
-
-//       const ast = this.template.ast(templateConfig.code, {
-//         plugins: templateConfig.plugins || [],
-//       });
-
-//       const program = t.program(ast);
-//       this.cachedASTs.set(templateName, program);
-
-//       return this.generate(program).code;
-//     } catch (error) {
-//       logger.error(
-//         `Failed to generate code for template "${templateName}": ${error.message}`
-//       );
-//       throw error;
-//     }
-//   }
-// }
-
-// setUpReactProject("typescript");
-
-// #!/usr/bin/env node
-
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import inquirer from "inquirer";
-import logger from "./utils/logger";
-import { ASTGenerator } from "./utils/ast";
+import {logger} from "./utils/logger.ts";
+import { ASTGenerator } from "./utils/ast.ts";
 
 const ast = new ASTGenerator();
 
@@ -387,7 +244,7 @@ function setupReactRouting(isTS: boolean) {
     const ext = isTS ? "tsx" : "jsx";
 
     const routerCode = ast.generateCode(
-      isTS ? "reactRouterTs" : "reactRouterJs"
+      isTS ? "reactRouterTS" : "reactRouterJS"
     );
 
     fs.writeFileSync(`src/main.${ext}`, routerCode);
@@ -396,13 +253,234 @@ function setupReactRouting(isTS: boolean) {
     fs.writeFileSync(`src/App.${ext}`, appCode);
 
     const cssFilePath = path.join(process.cwd(), "src", "App.css");
-    const cssCode = ast.generateCode("Appcss");
-
-    fs.writeFileSync(cssFilePath, cssCode);
+    fs.writeFileSync(cssFilePath, ast.generateCode("reactAppCSS"));
     logger.success("React Router setup complete!");
   } catch (error) {
     logger.error(`❌ Error setting up React Router: ${error}`);
   }
+}
+
+function setupTailwind(language: string) {
+  try {
+    logger.info("\n📦 Installing TailwindCSS...");
+    execSync(`npm i tailwindcss @tailwindcss/vite`);
+    const configFileName =
+      language === "JavaScript" ? "vite.config.js" : "vite.config.ts";
+
+    const configContent = ast.generateCode("tailwindConfig");
+
+    fs.writeFileSync(configFileName, configContent);
+
+    const cssFilePath = path.join(process.cwd(), "src", "index.css");
+    if (fs.existsSync(cssFilePath)) {
+      fs.writeFileSync(cssFilePath, `@import "tailwindcss";`);
+    }
+  } catch (error) {
+    logger.error(`❌ Error setting up TailwindCSS: ${error}`);
+  }
+}
+
+function setupReactClerk(language: string) {
+  const isTS = language === "TypeScript";
+
+  console.log("\n📦 Installing Clerk...");
+
+  execSync(`npm install @clerk/clerk-react`, {stdio: "inherit"});
+  fs.appendFileSync(".env", `VITE_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n`);
+
+  const mainCode = ast.generateCode(isTS ? "reactClerkTS" : "reactClerkJS");
+  fs.writeFileSync(`src/main.${isTS ? "tsx" : "jsx"}`,mainCode);
+
+  fs.writeFileSync(`src/App.${isTS ? "tsx" : "jsx"}`,ast.generateCode("reactClerkHome"));
+
+  const cssFilePath = path.join(process.cwd(), "src", "App.css");
+  fs.appendFileSync(
+    cssFilePath,
+    `
+  header {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  background-color: white;
+  color: black;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 24px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}`
+  );
+}
+
+function setupNextJsProject(language: string, cssChoice: string) {
+  const isTS = language === "TypeScript";
+  const tsFlag = isTS ? "--typescript" : "--javascript";
+  const cssFlag = cssChoice === "TailwindCSS" ? "--tailwind" : "";
+
+  execSync(
+    `npx create-next-app@latest . ${tsFlag} --use-npm --eslint --src-dir --app ${cssFlag} --no-import-alias --yens --turbopack`,
+    { stdio: "inherit" }
+  );
+
+  setupNextJsRouting(isTS);
+  fs.unlinkSync("README.md");
+  execSync(`npm install`, { stdio: "inherit" });
+}
+
+function setupNextJsRouting(isTS: boolean) {
+  try {
+    logger.info("\n🛠 Setting up Next.js routing...");
+
+    const ext = isTS ? "tsx" : "js";
+    const pagesDir = "src/app";
+
+    const nextCode = ast.generateCode("nextHome");
+    fs.writeFileSync(`${pagesDir}/page.${ext}`, nextCode);
+
+    const globalsCss = ast.generateCode("nextGlobalCSS");
+    fs.appendFileSync(`${pagesDir}/globals.css`, globalsCss);
+
+    logger.info("\n✅ Next.js routing setup complete!");
+  } catch (error){
+    logger.error(`❌ Error setting up Next.js routing: ${error}`);
+  }
+}
+
+function setupNextClerk(language: string){
+  try { 
+    const isTS = language === "TypeScript";
+    execSync(`npm install @clerk/nextjs`, { stdio: "inherit" });
+    fs.appendFileSync(
+      ".env",
+      "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\nCLERK_SECRET_KEY=YOUR_SECRET_KEY\n"
+    );
+    const srcDir = path.join(process.cwd(), "src");
+    if (!fs.existsSync(srcDir)) {
+      fs.mkdirSync(srcDir);
+    }
+    const middlewareExt = isTS ? "ts" : "js";
+    const middlewarePath = path.join(srcDir, `middleware.${middlewareExt}`);
+    const middlewareContent = ast.generateCode("nextClerkMiddleware");
+
+    fs.writeFileSync(middlewarePath, middlewareContent);
+    const appDir = path.join(srcDir, "app");
+    if (!fs.existsSync(appDir)) {
+      fs.mkdirSync(appDir);
+    }
+    const compExt = isTS ? "tsx" : "js";
+    const layoutPath = path.join(appDir, `layout.${compExt}`);
+    const layoutContent = ast.generateCode("nextClerkLayout");
+    fs.writeFileSync(layoutPath, layoutContent);
+
+    const pagePath = path.join(appDir, `page.${compExt}`);
+    const pageContent = ast.generateCode("nextPage");
+    fs.writeFileSync(pagePath, pageContent);
+
+    const globalsCssPath = path.join(appDir, "globals.css");
+    const headerStyles = ast.generateCode("nextCss");
+    fs.appendFileSync(globalsCssPath, headerStyles);
+
+    logger.info("\n✅ Next.js Clerk setup complete!");
+  } catch (error) {
+    logger.error(`❌ Error setting up Next.js Clerk: ${error}`);
+    process.exit(1);
+  }
+}
+
+
+// ------------ Backend Setup -----------
+
+function serverSetUp(backendPath: string, serverlanguage: string, database: string) {
+  try {
+    logger.info("\n⚡ Setting up backend...");
+    process.chdir(backendPath);
+
+    execSync("npm init -y", { stdio: "inherit" });
+
+    const backendPackageJsonPath = path.join(process.cwd(), "package.json");
+    const backendPackageJson = JSON.parse(
+      fs.readFileSync(backendPackageJsonPath, "utf-8")
+    );
+    backendPackageJson.type = "module";
+    fs.writeFileSync(
+      backendPackageJsonPath,
+      JSON.stringify(backendPackageJson, null, 2)
+    );
+
+    const isTS = serverlanguage === "TypeScript";
+    backendPackageJson.scripts = {
+      ...backendPackageJson.scripts,
+      dev: isTS
+        ? "nodemon"
+        : "nodemon src/index.js",
+    };
+
+    fs.writeFileSync(
+      backendPackageJsonPath,
+      JSON.stringify(backendPackageJson, null, 2)
+    );
+
+    execSync("npm i express dotenv cors nodemon", { stdio: "inherit" });
+
+    if (isTS) {
+      installTSDependencies();
+      createTSConfig();
+    }
+
+    createSrcStructure();
+
+    const fileType = isTS ? "ts" : "js";
+    createIndexFile(fileType, database);
+    createEnvFile(backendPath);
+    if(database !== "None")
+      setupDatabaseConfig(database, fileType, isTS);
+
+    fs.writeFileSync(
+      path.join(backendPath, ".gitignore"),
+      "node_modules\ndist\n.env\nfirebaseServiceAccount.json"
+    );
+
+    logger.info("\n✅ Backend setup complete!");
+  } catch (error) {
+    logger.error(`❌ Error setting up backend:, ${error}`);
+    process.exit(1);
+  }
+}
+
+function installTSDependencies() {
+  try {
+    const nodemonJSONcontent = ast.generateCode("nodemonJSON");
+
+    fs.writeFileSync("nodemon.json", nodemonJSONcontent);
+    execSync("npm install --save-dev typescript ts-node @types/node @types/express @types/cors",{ stdio: "inherit" });
+  } catch (error) {
+    logger.error(`❌ Error installing TypeScript dependencies: ${error}`);
+    process.exit(1);
+  }
+}
+
+function createTSConfig() {
+  const tsConfigContent = ast.generateCode("tsConfig");
+  fs.writeFileSync("tsconfig.json", JSON.stringify(tsConfigContent, null, 2));
+}
+
+function createSrcStructure() {
+  const srcPath = path.join(process.cwd(), "src");
+  if (!fs.existsSync(srcPath)) fs.mkdirSync(srcPath);
+  process.chdir(srcPath);
+
+  const folders = [
+    "models",
+    "controllers",
+    "routes",
+    "middlewares",
+    "utils",
+    "config",
+  ];
+  folders.forEach((folder) => {
+    if (!fs.existsSync(folder)) fs.mkdirSync(folder);
+  });
 }
 
 init();
