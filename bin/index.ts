@@ -283,7 +283,7 @@ function setupTailwind(language: string) {
 function setupReactClerk(language: string) {
   const isTS = language === "TypeScript";
 
-  console.log("\n📦 Installing Clerk...");
+  logger.info("\n📦 Installing Clerk...");
 
   execSync(`npm install @clerk/clerk-react`, {stdio: "inherit"});
   fs.appendFileSync(".env", `VITE_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n`);
@@ -481,6 +481,91 @@ function createSrcStructure() {
   folders.forEach((folder) => {
     if (!fs.existsSync(folder)) fs.mkdirSync(folder);
   });
+}
+
+function createIndexFile(fileType: string, database: string) {
+  try {
+    let importStatement = "";
+    let connectCall = "";
+
+    if (database === "MongoDB") {
+      importStatement = `import connectDB from './config/db.config.${fileType}';`;
+      connectCall = `  connectDB();`;
+    } else if (database === "FireBase") {
+      importStatement = `import db from './config/db.config.${fileType}';`;
+    } else if (database === "SupaBase") {
+      importStatement = `import supabase from './config/db.config.${fileType}';`;
+    } else {
+      throw new Error("Unsupported database type");
+    }
+
+    const indexContent = `import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+dotenv.config();
+${importStatement}
+
+const app = express();
+const PORT = process.env.PORT || 8000;
+
+app.use(express.json());
+app.use(cors());
+
+app.listen(PORT, () => {
+${connectCall}
+  console.log(\`🚀 Server started on port: \${PORT}\`);
+});
+`;
+
+    fs.writeFileSync(`index.${fileType}`, indexContent);
+  } catch (error) {
+    logger.error(`Error creating index file:, ${error}`);
+  }
+}
+
+function createEnvFile(backendPath: string) {
+  const envPath = path.join(backendPath, ".env");
+  const envContent = `PORT=8000\n`;
+  fs.writeFileSync(envPath, envContent, { flag: "w" });
+}
+
+function setupDatabaseConfig(database: string, fileType: string, isTS: boolean) {
+  if (database === "MongoDB") {
+    execSync("npm i mongoose", { stdio: "inherit" });
+    const envPath = path.join(process.cwd(), "..", ".env");
+    fs.appendFileSync(
+      envPath,
+      `MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/<databaseName>?retryWrites=true&w=majority\n`
+    );
+    const dbConfigFile = `db.config.${fileType}`;
+    const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
+    const dbConfigContent = isTS
+      ? ast.generateCode("mongooseTS")
+      : ast.generateCode("mongooseJS");
+    fs.writeFileSync(dbConfigPath, dbConfigContent);
+  } else if (database === "FireBase") {
+    execSync("npm i firebase-admin", { stdio: "inherit" });
+    const dbConfigFile = `db.config.${fileType}`;
+    const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
+    const firebaseContent = ast.generateCode("firebaseConfig");
+    fs.writeFileSync(dbConfigPath, firebaseContent);
+    const envPath = path.join(process.cwd(), "..", ".env");
+    fs.appendFileSync(
+      envPath,
+      "FIREBASE_SERVICE_ACCOUNT=`your-firebase-service-account-json keep in quotes`\n"
+    );
+  } else if (database === "SupaBase") {
+    execSync("npm i @supabase/supabase-js", { stdio: "inherit" });
+    const dbConfigFile = `db.config.${fileType}`;
+    const dbConfigPath = path.join(process.cwd(), "config", dbConfigFile);
+    const supabaseContent = ast.generateCode("supabaseConfig");
+    fs.writeFileSync(dbConfigPath, supabaseContent);
+    const envPath = path.join(process.cwd(), "..", ".env");
+    fs.appendFileSync(
+      envPath,
+      "SUPABASE_URL=https://your-supabase-url\nSUPABASE_ANON_KEY=your-supabase-key\n"
+    );
+  }
 }
 
 init();
