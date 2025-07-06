@@ -1,7 +1,7 @@
 {
   "name": "mern-init-cli",
   "type": "module",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "bin/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
