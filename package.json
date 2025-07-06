@@ -1,15 +1,22 @@
 {
   "name": "mern-init-cli",
   "type": "module",
-  "version": "1.0.5",
-  "main": "bin/index.ts",
+  "version": "1.0.6",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "tsx bin/temp.ts"
+    "dev": "tsx bin/temp.ts",
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
   },
   "bin": {
-    "mern-init": "./bin/index.ts"
+    "mern-init": "./dist/index.js"
   },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "package.json"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Sujith-Srikar/mern-init-cli.git"

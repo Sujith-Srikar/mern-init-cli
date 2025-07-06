@@ -1,11 +1,11 @@
-// #!/usr/bin/env node
+#!/usr/bin/env node
 
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import inquirer from "inquirer";
-import {logger} from "./utils/logger.ts";
-import { ASTGenerator } from "./utils/ast.ts";
+import { logger } from "./utils/logger.js";
+import { ASTGenerator } from "./utils/ast.js";
 
 const ast = new ASTGenerator();
 
@@ -46,43 +46,44 @@ async function init() {
     ]);
 
     if (frontendAccept) {
-      const { framework, language, cssChoice, authAccept } = await inquirer.prompt([
-        {
-          type: "list",
-          name: "framework",
-          message: "Choose your frontend framework:",
-          choices: ["React", "Next.js"],
-          default: "React",
-        },
-        {
-          type: "list",
-          name: "language",
-          message: "Choose your frontend language:",
-          choices: ["JavaScript", "TypeScript"],
-          default: "JavaScript",
-        },
-        {
-          type: "list",
-          name: "cssChoice",
-          message: "Choose your CSS framework:",
-          choices: ["TailwindCSS", "Vanilla CSS"],
-          default: "TailwindCSS",
-        },
-        {
-          type: "confirm",
-          name: "authAccept",
-          message: "Do you want to use Clerk for authentication in your project? (Requires a Clerk account)",
-          default: false,
-        }
-      ]);
+      const { framework, language, cssChoice, authAccept } =
+        await inquirer.prompt([
+          {
+            type: "list",
+            name: "framework",
+            message: "Choose your frontend framework:",
+            choices: ["React", "Next.js"],
+            default: "React",
+          },
+          {
+            type: "list",
+            name: "language",
+            message: "Choose your frontend language:",
+            choices: ["JavaScript", "TypeScript"],
+            default: "JavaScript",
+          },
+          {
+            type: "list",
+            name: "cssChoice",
+            message: "Choose your CSS framework:",
+            choices: ["TailwindCSS", "Vanilla CSS"],
+            default: "TailwindCSS",
+          },
+          {
+            type: "confirm",
+            name: "authAccept",
+            message:
+              "Do you want to use Clerk for authentication in your project? (Requires a Clerk account)",
+            default: false,
+          },
+        ]);
 
       const frontendPath = path.join(projectPath, "client");
       fs.mkdirSync(frontendPath, { recursive: true });
       clientSetUp(framework, language, cssChoice, frontendPath, authAccept);
     }
 
-    if(!frontendAccept)
-      logger.info("✅Skipping frontend Setup");
+    if (!frontendAccept) logger.info("✅Skipping frontend Setup");
 
     const { backendAccept } = await inquirer.prompt([
       {
@@ -95,32 +96,31 @@ async function init() {
 
     if (!backendAccept) {
       logger.info("✅Skipping backend  Setup");
+    } else {
+      const { serverlanguage } = await inquirer.prompt([
+        {
+          type: "list",
+          name: "serverlanguage",
+          message: "Choose your backend language:",
+          choices: ["JavaScript", "TypeScript"],
+          default: "JavaScript",
+        },
+      ]);
+
+      const { database } = await inquirer.prompt([
+        {
+          type: "list",
+          name: "database",
+          message: "Choose your database:",
+          choices: ["MongoDB", "FireBase", "SupaBase", "None"],
+          default: "MongoDB",
+        },
+      ]);
+
+      const backendPath = path.join(projectPath, "server");
+      fs.mkdirSync(backendPath, { recursive: true });
+      serverSetUp(backendPath, serverlanguage, database);
     }
-    else{
-    const { serverlanguage } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "serverlanguage",
-        message: "Choose your backend language:",
-        choices: ["JavaScript", "TypeScript"],
-        default: "JavaScript",
-      },
-    ]);
-
-    const { database } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "database",
-        message: "Choose your database:",
-        choices: ["MongoDB", "FireBase", "SupaBase", "None"],
-        default: "MongoDB",
-      },
-    ]);
-
-    const backendPath = path.join(projectPath, "server");
-    fs.mkdirSync(backendPath, { recursive: true });
-    serverSetUp(backendPath, serverlanguage, database);
-  }
     generateReadme(projectPath, {
       frontend: frontendAccept,
       backend: backendAccept,
@@ -133,7 +133,10 @@ async function init() {
   }
 }
 
-function generateReadme(projectPath: string, { frontend, backend }: { frontend: boolean; backend: boolean }) {
+function generateReadme(
+  projectPath: string,
+  { frontend, backend }: { frontend: boolean; backend: boolean }
+) {
   const readmeContent = `# ${path.basename(projectPath)}
 
 This project was generated using our custom project scaffolding tool. It includes:
@@ -190,7 +193,13 @@ ${
   }
 }
 
-function clientSetUp(framework: string, language: string, cssChoice: string, frontendPath: string, authAccept: boolean) {
+function clientSetUp(
+  framework: string,
+  language: string,
+  cssChoice: string,
+  frontendPath: string,
+  authAccept: boolean
+) {
   try {
     logger.info("\n⚡ Setting up frontend...");
     process.chdir(frontendPath);
@@ -201,13 +210,11 @@ function clientSetUp(framework: string, language: string, cssChoice: string, fro
       setupNextJsProject(language, cssChoice);
     }
 
-    if(authAccept){
-      if(framework === "React")
-        setupReactClerk(language);
+    if (authAccept) {
+      if (framework === "React") setupReactClerk(language);
       else setupNextClerk(language);
     }
-    if(framework === "React")
-      fs.appendFileSync(".gitignore", ".env");
+    if (framework === "React") fs.appendFileSync(".gitignore", ".env");
     logger.info("\n✅ Frontend setup complete!");
   } catch (error) {
     logger.error(`❌ Error setting up frontend:, ${error}`);
@@ -285,13 +292,19 @@ function setupReactClerk(language: string) {
 
   logger.info("\n📦 Installing Clerk...");
 
-  execSync(`npm install @clerk/clerk-react`, {stdio: "inherit"});
-  fs.appendFileSync(".env", `VITE_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n`);
+  execSync(`npm install @clerk/clerk-react`, { stdio: "inherit" });
+  fs.appendFileSync(
+    ".env",
+    `VITE_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY\n`
+  );
 
   const mainCode = ast.generateCode(isTS ? "reactClerkTS" : "reactClerkJS");
-  fs.writeFileSync(`src/main.${isTS ? "tsx" : "jsx"}`,mainCode);
+  fs.writeFileSync(`src/main.${isTS ? "tsx" : "jsx"}`, mainCode);
 
-  fs.writeFileSync(`src/App.${isTS ? "tsx" : "jsx"}`,ast.generateCode("reactClerkHome"));
+  fs.writeFileSync(
+    `src/App.${isTS ? "tsx" : "jsx"}`,
+    ast.generateCode("reactClerkHome")
+  );
 
   const cssFilePath = path.join(process.cwd(), "src", "App.css");
   fs.appendFileSync(
@@ -342,13 +355,13 @@ function setupNextJsRouting(isTS: boolean) {
     fs.appendFileSync(`${pagesDir}/globals.css`, globalsCss);
 
     logger.info("\n✅ Next.js routing setup complete!");
-  } catch (error){
+  } catch (error) {
     logger.error(`❌ Error setting up Next.js routing: ${error}`);
   }
 }
 
-function setupNextClerk(language: string){
-  try { 
+function setupNextClerk(language: string) {
+  try {
     const isTS = language === "TypeScript";
     execSync(`npm install @clerk/nextjs`, { stdio: "inherit" });
     fs.appendFileSync(
@@ -388,10 +401,13 @@ function setupNextClerk(language: string){
   }
 }
 
-
 // ------------ Backend Setup -----------
 
-function serverSetUp(backendPath: string, serverlanguage: string, database: string) {
+function serverSetUp(
+  backendPath: string,
+  serverlanguage: string,
+  database: string
+) {
   try {
     logger.info("\n⚡ Setting up backend...");
     process.chdir(backendPath);
@@ -411,9 +427,7 @@ function serverSetUp(backendPath: string, serverlanguage: string, database: stri
     const isTS = serverlanguage === "TypeScript";
     backendPackageJson.scripts = {
       ...backendPackageJson.scripts,
-      dev: isTS
-        ? "nodemon"
-        : "nodemon src/index.js",
+      dev: isTS ? "nodemon" : "nodemon src/index.js",
     };
 
     fs.writeFileSync(
@@ -433,8 +447,7 @@ function serverSetUp(backendPath: string, serverlanguage: string, database: stri
     const fileType = isTS ? "ts" : "js";
     createIndexFile(fileType, database);
     createEnvFile(backendPath);
-    if(database !== "None")
-      setupDatabaseConfig(database, fileType, isTS);
+    if (database !== "None") setupDatabaseConfig(database, fileType, isTS);
 
     fs.writeFileSync(
       path.join(backendPath, ".gitignore"),
@@ -453,7 +466,10 @@ function installTSDependencies() {
     const nodemonJSONcontent = ast.generateCode("nodemonJSON");
 
     fs.writeFileSync("nodemon.json", nodemonJSONcontent);
-    execSync("npm install --save-dev typescript ts-node @types/node @types/express @types/cors",{ stdio: "inherit" });
+    execSync(
+      "npm install --save-dev typescript ts-node @types/node @types/express @types/cors",
+      { stdio: "inherit" }
+    );
   } catch (error) {
     logger.error(`❌ Error installing TypeScript dependencies: ${error}`);
     process.exit(1);
@@ -529,7 +545,11 @@ function createEnvFile(backendPath: string) {
   fs.writeFileSync(envPath, envContent, { flag: "w" });
 }
 
-function setupDatabaseConfig(database: string, fileType: string, isTS: boolean) {
+function setupDatabaseConfig(
+  database: string,
+  fileType: string,
+  isTS: boolean
+) {
   if (database === "MongoDB") {
     execSync("npm i mongoose", { stdio: "inherit" });
     const envPath = path.join(process.cwd(), "..", ".env");

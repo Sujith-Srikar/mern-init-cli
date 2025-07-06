@@ -1,6 +1,6 @@
 import { parse, ParserPlugin } from "@babel/parser";
 import * as t from "@babel/types";
-import { logger } from "./logger.ts";
+import { logger } from "./logger.js";
 import generate from "@babel/generator";
 import fs from "fs";
 import path from "path";
@@ -470,33 +470,33 @@ h1 {
 
 const cachedASTs = new Map<string, t.File>();
 
-function generateAST(){
-    try {
-        for(const [key,template] of Object.entries(TEMPLATES)){
-            const ast = parse(template.code, {
-                sourceType: "module",
-                plugins: template.plugins,
-            });
-            cachedASTs.set(key, ast);
-        }
-    } catch (error) {
-        logger.error(`Error generating AST:, ${error}`);
+function generateAST() {
+  try {
+    for (const [key, template] of Object.entries(TEMPLATES)) {
+      const ast = parse(template.code, {
+        sourceType: "module",
+        plugins: template.plugins,
+      });
+      cachedASTs.set(key, ast);
     }
+  } catch (error) {
+    logger.error(`Error generating AST:, ${error}`);
+  }
 }
 
-function generateAllCode(){
+function generateAllCode() {
   try {
-    for(const [key, ast] of cachedASTs){
+    for (const [key, ast] of cachedASTs) {
       console.log(`Generating code for ${key}...\n`);
-      console.log(generate.default(ast).code+"\n\n");
+      console.log(generate.default(ast).code + "\n\n");
     }
   } catch (error) {
     logger.error(`Error generating code: ${error}`);
   }
 }
-if(cachedASTs==null){
+if (cachedASTs == null) {
   generateAST();
 }
 // generateAllCode();
 
-export {cachedASTs, PLAIN_TEMPLATES};
+export { cachedASTs, PLAIN_TEMPLATES };
